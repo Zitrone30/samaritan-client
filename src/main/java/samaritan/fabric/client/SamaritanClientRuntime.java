@@ -684,8 +684,7 @@ public class SamaritanClientRuntime {
                 .append(Text.literal("Samaritan").formatted(Formatting.RED))
                 .append(Text.literal("] ").formatted(Formatting.BLACK))
                 .append(Text.literal("<" + safeLabel(ign) + "/" + safeLabel(username) + "> ").formatted(Formatting.GOLD))
-                .append(Text.literal(message).formatted(Formatting.WHITE))
-                .append(Text.literal(" (" + safeLabel(serverIp) + ", " + safeLabel(dimension) + ")").formatted(Formatting.DARK_GRAY));
+                .append(Text.literal(message).formatted(Formatting.WHITE));
         if (client.player != null) {
             client.player.sendMessage(payload, false);
             return;
