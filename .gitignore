@@ -1,0 +1,21 @@
+# Gradle caches
+.gradle/
+.gradle-local/
+
+# Build output
+build/
+
+# Fabric Loom run/cache
+run/
+
+# Runtime data
+data/
+
+# IDE/editor
+.idea/
+*.iml
+.vscode/
+
+# OS files
+.DS_Store
+Thumbs.db
