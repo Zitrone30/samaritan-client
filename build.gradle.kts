@@ -1,5 +1,5 @@
 plugins {
-    id("fabric-loom") version "1.6.12"
+    id("fabric-loom") version "1.10-SNAPSHOT"
     `maven-publish`
 }
 
@@ -10,10 +10,10 @@ base {
     archivesName.set("samaritan-fabric-client")
 }
 
-val minecraftVersion = "1.21.1"
-val yarnMappings = "1.21.1+build.3"
-val loaderVersion = "0.16.10"
-val fabricApiVersion = "0.114.0+1.21.1"
+val minecraftVersion = "1.21.5"
+val yarnMappings = "1.21.5+build.1"
+val loaderVersion = "0.18.4"
+val fabricApiVersion = "0.128.2+1.21.5"
 
 repositories {
     mavenCentral()
