@@ -1,0 +1,15 @@
+{
+  "key.category.samaritan": "Samaritan",
+  "key.samaritan.open_login": "Open Samaritan Login",
+  "screen.samaritan.login.title": "Samaritan Login",
+  "screen.samaritan.server_host": "Server Host",
+  "screen.samaritan.server_port": "Server Port",
+  "screen.samaritan.username": "Username",
+  "screen.samaritan.password": "Password",
+  "screen.samaritan.esp_color": "ESP Color (#RRGGBB)",
+  "screen.samaritan.max_distance": "Max ESP Distance (blocks)",
+  "screen.samaritan.login": "Login",
+  "screen.samaritan.disconnect": "Disconnect",
+  "screen.samaritan.apply_settings": "Apply ESP Settings",
+  "screen.samaritan.close": "Close"
+}

@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "samaritan",
+  "version": "${version}",
+  "name": "Samaritan Client",
+  "description": "A mod to see friends even outside of render distance and have IRC",
+  "authors": ["Samaritan"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "samaritan.fabric.client.SamaritanFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.16.10",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
+}
