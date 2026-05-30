@@ -13,6 +13,7 @@ import org.lwjgl.glfw.GLFW;
 import samaritan.fabric.client.SamaritanClientRuntime;
 
 public class LoginScreen extends Screen {
+    private final Screen parent;
     private final SamaritanClientRuntime runtime;
 
     private TextFieldWidget hostField;
@@ -25,8 +26,9 @@ public class LoginScreen extends Screen {
     private ButtonWidget onlyHighwayToggleButton;
     private String errorMessage = "";
 
-    public LoginScreen(SamaritanClientRuntime runtime) {
+    public LoginScreen(Screen parent, SamaritanClientRuntime runtime) {
         super(Text.translatable("screen.samaritan.login.title"));
+        this.parent = parent;
         this.runtime = runtime;
     }
 
@@ -237,7 +239,7 @@ public class LoginScreen extends Screen {
     @Override
     public void close() {
         if (client != null) {
-            client.setScreen(null);
+            client.setScreen(parent);
         }
     }
 

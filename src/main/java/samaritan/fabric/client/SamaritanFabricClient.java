@@ -26,6 +26,10 @@ import java.util.Locale;
 public class SamaritanFabricClient implements ClientModInitializer {
     private static final SamaritanClientRuntime RUNTIME = new SamaritanClientRuntime();
 
+    public static SamaritanClientRuntime getRuntime() {
+        return RUNTIME;
+    }
+
     @Override
     public void onInitializeClient() {
         KeyBinding openLoginScreen = KeyBindingHelper.registerKeyBinding(new KeyBinding(
@@ -37,7 +41,7 @@ public class SamaritanFabricClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openLoginScreen.wasPressed()) {
-                client.setScreen(new LoginScreen(RUNTIME));
+                client.setScreen(new LoginScreen(client.currentScreen, RUNTIME));
             }
             RUNTIME.onClientTick(client);
         });

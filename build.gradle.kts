@@ -18,6 +18,7 @@ val fabricApiVersion = "0.141.3+1.21.11"
 repositories {
     mavenCentral()
     maven("https://maven.fabricmc.net/")
+    maven("https://maven.terraformersmc.com/")
 }
 
 dependencies {
@@ -25,6 +26,7 @@ dependencies {
     mappings("net.fabricmc:yarn:$yarnMappings:v2")
     modImplementation("net.fabricmc:fabric-loader:$loaderVersion")
     modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+    modCompileOnly("com.terraformersmc:modmenu:${property("modmenu_version")}")
 
     implementation("com.google.code.gson:gson:2.10.1")
 }

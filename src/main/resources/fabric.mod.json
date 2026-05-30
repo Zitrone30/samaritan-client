@@ -11,6 +11,9 @@
   "entrypoints": {
     "client": [
       "samaritan.fabric.client.SamaritanFabricClient"
+    ],
+    "modmenu": [
+      "samaritan.fabric.client.compat.SamaritanModMenuIntegration"
     ]
   },
   "depends": {
@@ -18,5 +21,8 @@
     "minecraft": "~1.21.8",
     "java": ">=21",
     "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }
