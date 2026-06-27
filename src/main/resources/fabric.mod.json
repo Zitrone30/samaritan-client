@@ -11,12 +11,18 @@
   "entrypoints": {
     "client": [
       "samaritan.fabric.client.SamaritanFabricClient"
+    ],
+    "modmenu": [
+      "samaritan.fabric.client.compat.SamaritanModMenuIntegration"
     ]
   },
   "depends": {
-    "fabricloader": ">=0.16.10",
-    "minecraft": "~1.21.8",
-    "java": ">=21",
+    "fabricloader": ">=0.19.3",
+    "minecraft": "~26.1.2",
+    "java": ">=25",
     "fabric-api": "*"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

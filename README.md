@@ -7,6 +7,7 @@ The private server, admin panel, backend auth code, database files, and deployme
 ## Client Features
 
 - In-game login screen
+- Optional Mod Menu config screen integration
 - Connect and disconnect from a Samaritan server
 - Save the server host, port, and HTTP/HTTPS setting
 - Persist your login token locally for reconnects
@@ -33,6 +34,8 @@ The private server, admin panel, backend auth code, database files, and deployme
 3. Start Minecraft with Fabric.
 
 4. Open the Samaritan login screen with the default keybind `K`.
+
+If you also have Mod Menu installed, you can open the same screen from the Samaritan entry in Mod Menu.
 
 5. Enter:
 
@@ -62,7 +65,7 @@ You can also use `/s` as the short alias.
 
 ## Build
 
-Build the mod:
+Build the mod with JDK 25:
 
 ```bash
 ./gradlew build

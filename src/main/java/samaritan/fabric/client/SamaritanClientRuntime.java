@@ -1,14 +1,5 @@
 package samaritan.fabric.client;
 
-import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.item.Items;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.math.Vec3d;
 import samaritan.fabric.client.net.AuthClient;
 import samaritan.fabric.client.net.GameWebSocketClient;
 
@@ -21,6 +12,14 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.phys.Vec3;
 
 public class SamaritanClientRuntime {
     private static final int DEFAULT_ESP_COLOR_RGB = 0x94D9FF;
@@ -30,6 +29,7 @@ public class SamaritanClientRuntime {
     private static final int ESP_TEXT_COLOR = 0xBFE8FF;
     private static final int ESP_TEXT_LIGHT = 15728880;
     private static final long REMOTE_STALE_MS = 20_000L;
+    private static final double OUT_OF_RANGE_MARKER_DISTANCE_PADDING = 12.0;
     private static final double HIGHWAY_TOLERANCE_BLOCKS = 30.0;
 
     private String serverHost = "127.0.0.1";
@@ -126,7 +126,7 @@ public class SamaritanClientRuntime {
         return authClient == null ? null : authClient.getUsername();
     }
 
-    public void connectAsync(String username, String password, MinecraftClient client) {
+    public void connectAsync(String username, String password, Minecraft client) {
         synchronized (this) {
             if (connecting) {
                 sendMessage(client, "Already connecting...");
@@ -187,7 +187,7 @@ public class SamaritanClientRuntime {
         });
     }
 
-    public void reconnectWithCurrentToken(MinecraftClient client) {
+    public void reconnectWithCurrentToken(Minecraft client) {
         ensureSessionLoadedFromDisk();
 
         synchronized (this) {
@@ -245,7 +245,7 @@ public class SamaritanClientRuntime {
         });
     }
 
-    public synchronized void disconnect(MinecraftClient client) {
+    public synchronized void disconnect(Minecraft client) {
         if (webSocketClient != null) {
             webSocketClient.disconnect();
             webSocketClient = null;
@@ -260,7 +260,7 @@ public class SamaritanClientRuntime {
         sendMessage(client, "Disconnected");
     }
 
-    public synchronized void onLeaveServer(MinecraftClient client) {
+    public synchronized void onLeaveServer(Minecraft client) {
         if (webSocketClient != null) {
             webSocketClient.disconnect();
             webSocketClient = null;
@@ -270,16 +270,18 @@ public class SamaritanClientRuntime {
         }
     }
 
-    public synchronized void onClientTick(MinecraftClient client) {
+    public synchronized void onClientTick(Minecraft client) {
         if (client.player == null || webSocketClient == null || !webSocketClient.isConnected()) {
             return;
         }
 
-        String dimension = client.player.getWorld().getRegistryKey().getValue().toString();
-        String activeServerIp = client.getCurrentServerEntry() != null
-                ? client.getCurrentServerEntry().address
+        String dimension = client.level != null
+                ? client.level.dimension().identifier().toString()
+                : "unknown";
+        String activeServerIp = client.getCurrentServer() != null
+                ? client.getCurrentServer().ip
                 : "singleplayer";
-        String localIgn = client.player.getGameProfile().getName();
+        String localIgn = client.player.getName().getString();
 
         if (onlyHighway && !isHighwayPosition(client.player.getX(), client.player.getZ())) {
             return;
@@ -364,7 +366,7 @@ public class SamaritanClientRuntime {
         ));
     }
 
-    public boolean sendChat(MinecraftClient client, String message) {
+    public boolean sendChat(Minecraft client, String message) {
         if (message == null || message.isBlank()) {
             sendWarnMessage(client, "Usage: /samaritan chat <message>");
             return false;
@@ -380,12 +382,12 @@ public class SamaritanClientRuntime {
         }
 
         ws.sendChat(message.trim());
-        String localIgn = client.player != null ? client.player.getGameProfile().getName() : getUsername();
-        String activeServerIp = client.getCurrentServerEntry() != null
-                ? client.getCurrentServerEntry().address
+        String localIgn = client.player != null ? client.player.getName().getString() : getUsername();
+        String activeServerIp = client.getCurrentServer() != null
+                ? client.getCurrentServer().ip
                 : "singleplayer";
         String localDimension = client.player != null
-                ? client.player.getWorld().getRegistryKey().getValue().toString()
+                ? client.level.dimension().identifier().toString()
                 : "unknown";
         sendIncomingChatMessage(
                 client,
@@ -398,7 +400,7 @@ public class SamaritanClientRuntime {
         return true;
     }
 
-    public boolean sendPing(MinecraftClient client) {
+    public boolean sendPing(Minecraft client) {
         GameWebSocketClient ws;
         synchronized (this) {
             ws = this.webSocketClient;
@@ -415,7 +417,7 @@ public class SamaritanClientRuntime {
         return true;
     }
 
-    public boolean changeOwnPassword(MinecraftClient client, String currentPassword, String newPassword) {
+    public boolean changeOwnPassword(Minecraft client, String currentPassword, String newPassword) {
         if (currentPassword == null || currentPassword.isBlank() || newPassword == null || newPassword.isBlank()) {
             sendWarnMessage(client, "Usage: /samaritan passwd <currentPassword> <newPassword>");
             return false;
@@ -441,19 +443,15 @@ public class SamaritanClientRuntime {
         return true;
     }
 
-    public void renderEspMarkers(WorldRenderContext context) {
-        // Disabled intentionally: world-space teammate box rendering removed.
-    }
-
-    public void renderOorHudIndicators(DrawContext drawContext) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client.player == null || client.world == null) {
+    public void renderOorHudIndicators(GuiGraphicsExtractor drawContext) {
+        Minecraft client = Minecraft.getInstance();
+        if (client.player == null || client.level == null) {
             return;
         }
 
-        String currentDimension = client.player.getWorld().getRegistryKey().getValue().toString();
-        String currentServerIp = client.getCurrentServerEntry() != null
-                ? client.getCurrentServerEntry().address
+        String currentDimension = client.level.dimension().identifier().toString();
+        String currentServerIp = client.getCurrentServer() != null
+                ? client.getCurrentServer().ip
                 : "singleplayer";
         String normalizedCurrentDimension = normalizeDimension(currentDimension);
         String normalizedCurrentServer = normalizeServerAddress(currentServerIp);
@@ -466,19 +464,19 @@ public class SamaritanClientRuntime {
 
         List<RemotePlayerState> snapshot = new ArrayList<>(remotePlayers.values());
 
-        Vec3d localPos = client.player.getPos();
+        Vec3 localPos = new Vec3(client.player.getX(), client.player.getY(), client.player.getZ());
         double maxDistanceSq = (double) maxRenderDistanceBlocks * (double) maxRenderDistanceBlocks;
-        Vec3d look = client.player.getRotationVec(1.0f);
-        Vec3d forward = new Vec3d(look.x, 0.0, look.z);
-        if (forward.lengthSquared() < 0.001) {
-            forward = new Vec3d(0, 0, 1);
+        Vec3 look = client.player.getViewVector(1.0f);
+        Vec3 forward = new Vec3(look.x, 0.0, look.z);
+        if (forward.lengthSqr() < 0.001) {
+            forward = new Vec3(0, 0, 1);
         } else {
             forward = forward.normalize();
         }
-        Vec3d right = new Vec3d(-forward.z, 0.0, forward.x);
+        Vec3 right = new Vec3(-forward.z, 0.0, forward.x);
 
-        TextRenderer tr = client.textRenderer;
-        int centerX = drawContext.getScaledWindowWidth() / 2;
+        Font tr = client.font;
+        int centerX = drawContext.guiWidth() / 2;
         int y = 12;
         int drawn = 0;
 
@@ -511,10 +509,10 @@ public class SamaritanClientRuntime {
                 continue;
             }
 
-            Vec3d horizontal = new Vec3d(dx, 0.0, dz);
-            Vec3d dir = horizontal.lengthSquared() > 0.001 ? horizontal.normalize() : forward;
-            double ahead = forward.dotProduct(dir);
-            double side = right.dotProduct(dir);
+            Vec3 horizontal = new Vec3(dx, 0.0, dz);
+            Vec3 dir = horizontal.lengthSqr() > 0.001 ? horizontal.normalize() : forward;
+            double ahead = forward.dot(dir);
+            double side = right.dot(dir);
             String arrow;
             if (ahead > 0.35 && side > 0.35) {
                 arrow = "↗";
@@ -531,9 +529,9 @@ public class SamaritanClientRuntime {
             } else {
                 arrow = side >= 0 ? "→" : "←";
             }
-            Text label = Text.literal(String.format("%s %s %.0fm T:%d", arrow, safeLabel(state.ign()), distance, state.totemCount()));
-            int width = tr.getWidth(label);
-            drawContext.drawTextWithShadow(tr, label, centerX - (width / 2), y, 0xFFFFFF55);
+            Component label = Component.literal(String.format("%s %s %.0fm T:%d", arrow, safeLabel(state.ign()), distance, state.totemCount()));
+            int width = tr.width(label);
+            drawContext.text(tr, label, centerX - (width / 2), y, 0xFFFFFF55);
             y += 12;
             drawn++;
             if (drawn >= 6) {
@@ -549,15 +547,15 @@ public class SamaritanClientRuntime {
         return value;
     }
 
-    private int countTotemsInPlayerInventory(MinecraftClient client) {
-        if (client.player == null || client.player.playerScreenHandler == null) {
+    private int countTotemsInPlayerInventory(Minecraft client) {
+        if (client.player == null || client.player.inventoryMenu == null) {
             return 0;
         }
 
         int total = 0;
-        for (net.minecraft.screen.slot.Slot slot : client.player.playerScreenHandler.slots) {
-            var stack = slot.getStack();
-            if (!stack.isEmpty() && stack.isOf(Items.TOTEM_OF_UNDYING)) {
+        for (net.minecraft.world.inventory.Slot slot : client.player.inventoryMenu.slots) {
+            var stack = slot.getItem();
+            if (!stack.isEmpty() && stack.is(Items.TOTEM_OF_UNDYING)) {
                 total += stack.getCount();
             }
         }
@@ -598,7 +596,7 @@ public class SamaritanClientRuntime {
         return host + ":" + port;
     }
 
-    private GameWebSocketClient.PositionListener createPositionListener(MinecraftClient client) {
+    private GameWebSocketClient.PositionListener createPositionListener(Minecraft client) {
         return new GameWebSocketClient.PositionListener() {
             @Override
             public void onPositionUpdate(String remoteUsername, String ign, double x, double y, double z, String dimension, String serverIp, int totemCount) {
@@ -608,7 +606,7 @@ public class SamaritanClientRuntime {
                 }
 
                  if (onlyHighway) {
-                    MinecraftClient currentClient = MinecraftClient.getInstance();
+                    Minecraft currentClient = Minecraft.getInstance();
                     if (currentClient.player == null || !isHighwayPosition(currentClient.player.getX(), currentClient.player.getZ())) {
                         remotePlayers.remove(remoteUsername);
                         activeTransmitters.remove(remoteUsername);
@@ -655,55 +653,55 @@ public class SamaritanClientRuntime {
         };
     }
 
-    private void sendInfoMessage(MinecraftClient client, String message) {
-        sendMessage(client, message, Formatting.AQUA);
+    private void sendInfoMessage(Minecraft client, String message) {
+        sendMessage(client, message, ChatFormatting.AQUA);
     }
 
-    private void sendWarnMessage(MinecraftClient client, String message) {
-        sendMessage(client, message, Formatting.YELLOW);
+    private void sendWarnMessage(Minecraft client, String message) {
+        sendMessage(client, message, ChatFormatting.YELLOW);
     }
 
-    private void sendSuccessMessage(MinecraftClient client, String message) {
-        sendMessage(client, message, Formatting.GREEN);
+    private void sendSuccessMessage(Minecraft client, String message) {
+        sendMessage(client, message, ChatFormatting.GREEN);
     }
 
-    private void sendErrorMessage(MinecraftClient client, String message) {
-        sendMessage(client, message, Formatting.RED);
+    private void sendErrorMessage(Minecraft client, String message) {
+        sendMessage(client, message, ChatFormatting.RED);
     }
 
     private void sendIncomingChatMessage(
-            MinecraftClient client,
+            Minecraft client,
             String username,
             String ign,
             String serverIp,
             String dimension,
             String message
     ) {
-        MutableText payload = Text.empty()
-                .append(Text.literal("[").formatted(Formatting.BLACK))
-                .append(Text.literal("Samaritan").formatted(Formatting.RED))
-                .append(Text.literal("] ").formatted(Formatting.BLACK))
-                .append(Text.literal("<" + safeLabel(ign) + "/" + safeLabel(username) + "> ").formatted(Formatting.GOLD))
-                .append(Text.literal(message).formatted(Formatting.WHITE));
+        MutableComponent payload = Component.empty()
+                .append(Component.literal("[").withStyle(ChatFormatting.BLACK))
+                .append(Component.literal("Samaritan").withStyle(ChatFormatting.RED))
+                .append(Component.literal("] ").withStyle(ChatFormatting.BLACK))
+                .append(Component.literal("<" + safeLabel(ign) + "/" + safeLabel(username) + "> ").withStyle(ChatFormatting.GOLD))
+                .append(Component.literal(message).withStyle(ChatFormatting.WHITE));
         if (client.player != null) {
-            client.player.sendMessage(payload, false);
+            client.player.sendSystemMessage(payload);
             return;
         }
         System.out.println("[Samaritan] <" + safeLabel(ign) + "/" + safeLabel(username) + "> " + message);
     }
 
-    private void sendMessage(MinecraftClient client, String message) {
-        sendMessage(client, message, Formatting.AQUA);
+    private void sendMessage(Minecraft client, String message) {
+        sendMessage(client, message, ChatFormatting.AQUA);
     }
 
-    private void sendMessage(MinecraftClient client, String message, Formatting messageColor) {
-        MutableText payload = Text.empty()
-                .append(Text.literal("[").formatted(Formatting.BLACK))
-                .append(Text.literal("Samaritan").formatted(Formatting.RED))
-                .append(Text.literal("] ").formatted(Formatting.BLACK))
-                .append(Text.literal(message).formatted(messageColor));
+    private void sendMessage(Minecraft client, String message, ChatFormatting messageColor) {
+        MutableComponent payload = Component.empty()
+                .append(Component.literal("[").withStyle(ChatFormatting.BLACK))
+                .append(Component.literal("Samaritan").withStyle(ChatFormatting.RED))
+                .append(Component.literal("] ").withStyle(ChatFormatting.BLACK))
+                .append(Component.literal(message).withStyle(messageColor));
         if (client.player != null) {
-            client.player.sendMessage(payload, false);
+            client.player.sendSystemMessage(payload);
             return;
         }
         System.out.println("[Samaritan] " + message);

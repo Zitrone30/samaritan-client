@@ -1,31 +1,34 @@
 package samaritan.fabric.client.ui;
 
-import net.minecraft.client.gui.DrawContext;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.TextFieldWidget;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.text.OrderedText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.components.Tooltip;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.input.KeyEvent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.util.FormattedCharSequence;
 import org.lwjgl.glfw.GLFW;
 import samaritan.fabric.client.SamaritanClientRuntime;
 
 public class LoginScreen extends Screen {
+    private final Screen parent;
     private final SamaritanClientRuntime runtime;
 
-    private TextFieldWidget hostField;
-    private TextFieldWidget portField;
-    private ButtonWidget securityToggleButton;
-    private TextFieldWidget usernameField;
-    private TextFieldWidget passwordField;
-    private TextFieldWidget minArrowRangeField;
-    private ButtonWidget horizontalDistanceToggleButton;
-    private ButtonWidget onlyHighwayToggleButton;
+    private EditBox hostField;
+    private EditBox portField;
+    private Button securityToggleButton;
+    private EditBox usernameField;
+    private EditBox passwordField;
+    private EditBox minArrowRangeField;
+    private Button horizontalDistanceToggleButton;
+    private Button onlyHighwayToggleButton;
     private String errorMessage = "";
 
-    public LoginScreen(SamaritanClientRuntime runtime) {
-        super(Text.translatable("screen.samaritan.login.title"));
+    public LoginScreen(Screen parent, SamaritanClientRuntime runtime) {
+        super(Component.translatable("screen.samaritan.login.title"));
+        this.parent = parent;
         this.runtime = runtime;
     }
 
@@ -38,67 +41,67 @@ public class LoginScreen extends Screen {
         int rowGap = 34;
         int buttonStartY = startY + rowGap * 8 + 2;
 
-        hostField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth / 2, startY, fieldWidth, fieldHeight,
-                Text.translatable("screen.samaritan.server_host"));
-        hostField.setText(runtime.getServerHost());
-        addDrawableChild(hostField);
+        hostField = new EditBox(this.font, centerX - fieldWidth / 2, startY, fieldWidth, fieldHeight,
+                Component.translatable("screen.samaritan.server_host"));
+        hostField.setValue(runtime.getServerHost());
+        addRenderableWidget(hostField);
 
-        portField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth / 2, startY + rowGap, fieldWidth, fieldHeight,
-                Text.translatable("screen.samaritan.server_port"));
-        portField.setText(String.valueOf(runtime.getServerPort()));
-        addDrawableChild(portField);
+        portField = new EditBox(this.font, centerX - fieldWidth / 2, startY + rowGap, fieldWidth, fieldHeight,
+                Component.translatable("screen.samaritan.server_port"));
+        portField.setValue(String.valueOf(runtime.getServerPort()));
+        addRenderableWidget(portField);
 
-        securityToggleButton = addDrawableChild(ButtonWidget.builder(getSecurityToggleText(), button -> onToggleSecurity())
-                .dimensions(centerX - fieldWidth / 2, startY + rowGap * 2, fieldWidth, 20)
+        securityToggleButton = addRenderableWidget(Button.builder(getSecurityToggleText(), button -> onToggleSecurity())
+                .bounds(centerX - fieldWidth / 2, startY + rowGap * 2, fieldWidth, 20)
                 .build());
 
-        usernameField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth / 2, startY + rowGap * 3, fieldWidth, fieldHeight,
-                Text.translatable("screen.samaritan.username"));
-        addDrawableChild(usernameField);
+        usernameField = new EditBox(this.font, centerX - fieldWidth / 2, startY + rowGap * 3, fieldWidth, fieldHeight,
+                Component.translatable("screen.samaritan.username"));
+        addRenderableWidget(usernameField);
 
-        passwordField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth / 2, startY + rowGap * 4, fieldWidth, fieldHeight,
-                Text.translatable("screen.samaritan.password"));
-        passwordField.setRenderTextProvider((text, firstCharacterIndex) -> OrderedText.styledForwardsVisitedString("*".repeat(text.length()), Style.EMPTY));
-        addDrawableChild(passwordField);
+        passwordField = new EditBox(this.font, centerX - fieldWidth / 2, startY + rowGap * 4, fieldWidth, fieldHeight,
+                Component.translatable("screen.samaritan.password"));
+        passwordField.addFormatter((text, firstCharacterIndex) -> FormattedCharSequence.forward("*".repeat(text.length()), Style.EMPTY));
+        addRenderableWidget(passwordField);
 
-        minArrowRangeField = new TextFieldWidget(this.textRenderer, centerX - fieldWidth / 2, startY + rowGap * 5, fieldWidth, fieldHeight,
-                Text.translatable("screen.samaritan.min_arrow_range"));
-        minArrowRangeField.setText(String.valueOf(runtime.getMinArrowDistanceBlocks()));
-        addDrawableChild(minArrowRangeField);
+        minArrowRangeField = new EditBox(this.font, centerX - fieldWidth / 2, startY + rowGap * 5, fieldWidth, fieldHeight,
+                Component.translatable("screen.samaritan.min_arrow_range"));
+        minArrowRangeField.setValue(String.valueOf(runtime.getMinArrowDistanceBlocks()));
+        addRenderableWidget(minArrowRangeField);
 
-        horizontalDistanceToggleButton = addDrawableChild(ButtonWidget.builder(getHorizontalDistanceToggleText(), button -> onToggleHorizontalDistance())
-                .dimensions(centerX - fieldWidth / 2, startY + rowGap * 6, fieldWidth, 20)
+        horizontalDistanceToggleButton = addRenderableWidget(Button.builder(getHorizontalDistanceToggleText(), button -> onToggleHorizontalDistance())
+                .bounds(centerX - fieldWidth / 2, startY + rowGap * 6, fieldWidth, 20)
                 .build());
 
-        onlyHighwayToggleButton = addDrawableChild(ButtonWidget.builder(getOnlyHighwayToggleText(), button -> onToggleOnlyHighway())
-                .dimensions(centerX - fieldWidth / 2, startY + rowGap * 7, fieldWidth, 20)
-                .tooltip(Tooltip.of(Text.translatable("screen.samaritan.only_highway.tooltip")))
+        onlyHighwayToggleButton = addRenderableWidget(Button.builder(getOnlyHighwayToggleText(), button -> onToggleOnlyHighway())
+                .bounds(centerX - fieldWidth / 2, startY + rowGap * 7, fieldWidth, 20)
+                .tooltip(Tooltip.create(Component.translatable("screen.samaritan.only_highway.tooltip")))
                 .build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.samaritan.login"), button -> onLogin())
-                .dimensions(centerX - fieldWidth / 2, buttonStartY, 106, 20)
+        addRenderableWidget(Button.builder(Component.translatable("screen.samaritan.login"), button -> onLogin())
+                .bounds(centerX - fieldWidth / 2, buttonStartY, 106, 20)
                 .build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.samaritan.disconnect"), button -> onDisconnect())
-                .dimensions(centerX + 2, buttonStartY, 106, 20)
+        addRenderableWidget(Button.builder(Component.translatable("screen.samaritan.disconnect"), button -> onDisconnect())
+                .bounds(centerX + 2, buttonStartY, 106, 20)
                 .build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.samaritan.apply_settings"), button -> onApplySettings())
-                .dimensions(centerX - fieldWidth / 2, buttonStartY + 24, fieldWidth, 20)
+        addRenderableWidget(Button.builder(Component.translatable("screen.samaritan.apply_settings"), button -> onApplySettings())
+                .bounds(centerX - fieldWidth / 2, buttonStartY + 24, fieldWidth, 20)
                 .build());
 
-        addDrawableChild(ButtonWidget.builder(Text.translatable("screen.samaritan.close"), button -> close())
-                .dimensions(centerX - fieldWidth / 2, buttonStartY + 48, fieldWidth, 20)
+        addRenderableWidget(Button.builder(Component.translatable("screen.samaritan.close"), button -> onClose())
+                .bounds(centerX - fieldWidth / 2, buttonStartY + 48, fieldWidth, 20)
                 .build());
 
         setInitialFocus(usernameField);
     }
 
     private void onLogin() {
-        String host = hostField.getText().trim();
-        String portText = portField.getText().trim();
-        String username = usernameField.getText().trim();
-        String password = passwordField.getText();
+        String host = hostField.getValue().trim();
+        String portText = portField.getValue().trim();
+        String username = usernameField.getValue().trim();
+        String password = passwordField.getValue();
 
         if (host.isEmpty() || username.isEmpty() || password.isEmpty()) {
             errorMessage = "Host, username and password are required";
@@ -123,17 +126,17 @@ public class LoginScreen extends Screen {
         }
 
         runtime.setServerEndpoint(host, port, runtime.isTlsEnabled());
-        if (client != null) {
-            runtime.connectAsync(username, password, client);
+        if (minecraft != null) {
+            runtime.connectAsync(username, password, minecraft);
         }
-        close();
+        onClose();
     }
 
     private void onDisconnect() {
-        if (client != null) {
-            runtime.disconnect(client);
+        if (minecraft != null) {
+            runtime.disconnect(minecraft);
         }
-        close();
+        onClose();
     }
 
     private void onApplySettings() {
@@ -143,7 +146,7 @@ public class LoginScreen extends Screen {
     }
 
     private void onToggleSecurity() {
-        String host = hostField != null ? hostField.getText().trim() : runtime.getServerHost();
+        String host = hostField != null ? hostField.getValue().trim() : runtime.getServerHost();
         if (host.isEmpty()) {
             host = runtime.getServerHost();
         }
@@ -151,14 +154,14 @@ public class LoginScreen extends Screen {
         int port = runtime.getServerPort();
         if (portField != null) {
             try {
-                port = Integer.parseInt(portField.getText().trim());
+                port = Integer.parseInt(portField.getValue().trim());
             } catch (NumberFormatException ignored) {
             }
         }
 
         runtime.setServerEndpoint(host, port, !runtime.isTlsEnabled());
-        hostField.setText(host);
-        portField.setText(String.valueOf(port));
+        hostField.setValue(host);
+        portField.setValue(String.valueOf(port));
         if (securityToggleButton != null) {
             securityToggleButton.setMessage(getSecurityToggleText());
         }
@@ -181,24 +184,24 @@ public class LoginScreen extends Screen {
         errorMessage = "Saved highway settings";
     }
 
-    private Text getSecurityToggleText() {
-        return Text.translatable(
+    private Component getSecurityToggleText() {
+        return Component.translatable(
                 runtime.isTlsEnabled()
                         ? "screen.samaritan.connection_security.https"
                         : "screen.samaritan.connection_security.http"
         );
     }
 
-    private Text getHorizontalDistanceToggleText() {
-        return Text.translatable(
+    private Component getHorizontalDistanceToggleText() {
+        return Component.translatable(
                 runtime.isHorizontalDistanceOnly()
                         ? "screen.samaritan.horizontal_distance_only.on"
                         : "screen.samaritan.horizontal_distance_only.off"
         );
     }
 
-    private Text getOnlyHighwayToggleText() {
-        return Text.translatable(
+    private Component getOnlyHighwayToggleText() {
+        return Component.translatable(
                 runtime.isOnlyHighway()
                         ? "screen.samaritan.only_highway.on"
                         : "screen.samaritan.only_highway.off"
@@ -208,7 +211,7 @@ public class LoginScreen extends Screen {
     private boolean applyRenderSettingsFromFields() {
         int minArrowRange;
         try {
-            minArrowRange = Integer.parseInt(minArrowRangeField.getText().trim());
+            minArrowRange = Integer.parseInt(minArrowRangeField.getValue().trim());
         } catch (NumberFormatException e) {
             errorMessage = "Min arrow range must be numeric";
             return false;
@@ -220,29 +223,29 @@ public class LoginScreen extends Screen {
         }
 
         runtime.setMinArrowDistanceBlocks(minArrowRange);
-        minArrowRangeField.setText(String.valueOf(minArrowRange));
+        minArrowRangeField.setValue(String.valueOf(minArrowRange));
         return true;
     }
 
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
+    public boolean keyPressed(KeyEvent keyInput) {
+        if (keyInput.key() == GLFW.GLFW_KEY_ENTER || keyInput.key() == GLFW.GLFW_KEY_KP_ENTER) {
             onLogin();
             return true;
         }
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.keyPressed(keyInput);
     }
 
     @Override
-    public void close() {
-        if (client != null) {
-            client.setScreen(null);
+    public void onClose() {
+        if (minecraft != null) {
+            minecraft.setScreen(parent);
         }
     }
 
     @Override
-    public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-        super.render(context, mouseX, mouseY, delta);
+    public void extractRenderState(GuiGraphicsExtractor context, int mouseX, int mouseY, float delta) {
+        super.extractRenderState(context, mouseX, mouseY, delta);
 
         int centerX = this.width / 2;
         int startY = this.height / 2 - 132;
@@ -250,19 +253,19 @@ public class LoginScreen extends Screen {
         int labelOffsetY = -12;
         int messageY = startY + rowGap * 8 + 74;
 
-        context.drawCenteredTextWithShadow(this.textRenderer, this.title, centerX, startY - 20, 0xFFFFFFFF);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.server_host"), centerX - 110, startY + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.server_port"), centerX - 110, startY + rowGap + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.connection_security"), centerX - 110, startY + rowGap * 2 + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.username"), centerX - 110, startY + rowGap * 3 + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.password"), centerX - 110, startY + rowGap * 4 + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.min_arrow_range"), centerX - 110, startY + rowGap * 5 + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.horizontal_distance_only"), centerX - 110, startY + rowGap * 6 + labelOffsetY, 0xFFE0E0E0);
-        context.drawTextWithShadow(this.textRenderer, Text.translatable("screen.samaritan.only_highway"), centerX - 110, startY + rowGap * 7 + labelOffsetY, 0xFFE0E0E0);
+        context.centeredText(this.font, this.title, centerX, startY - 20, 0xFFFFFFFF);
+        context.text(this.font, Component.translatable("screen.samaritan.server_host"), centerX - 110, startY + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.server_port"), centerX - 110, startY + rowGap + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.connection_security"), centerX - 110, startY + rowGap * 2 + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.username"), centerX - 110, startY + rowGap * 3 + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.password"), centerX - 110, startY + rowGap * 4 + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.min_arrow_range"), centerX - 110, startY + rowGap * 5 + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.horizontal_distance_only"), centerX - 110, startY + rowGap * 6 + labelOffsetY, 0xFFE0E0E0);
+        context.text(this.font, Component.translatable("screen.samaritan.only_highway"), centerX - 110, startY + rowGap * 7 + labelOffsetY, 0xFFE0E0E0);
 
         if (!errorMessage.isEmpty()) {
             int color = errorMessage.startsWith("Saved") ? 0xFF55FF55 : 0xFFFF5555;
-            context.drawCenteredTextWithShadow(this.textRenderer, Text.literal(errorMessage), centerX, messageY, color);
+            context.centeredText(this.font, Component.literal(errorMessage), centerX, messageY, color);
         }
     }
 }

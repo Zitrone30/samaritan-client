@@ -1,8 +1,7 @@
 plugins {
-    id("fabric-loom") version "1.10-SNAPSHOT"
+    id("net.fabricmc.fabric-loom") version "1.17-SNAPSHOT"
     `maven-publish`
 }
-
 
 group = "samaritan"
 version = "1.0"
@@ -11,28 +10,28 @@ base {
     archivesName.set("samaritan-fabric-client")
 }
 
-val minecraftVersion = "1.21.8"
-val yarnMappings = "1.21.8+build.1"
-val loaderVersion = "0.17.2"
-val fabricApiVersion = "0.136.1+1.21.8"
+val minecraftVersion = "26.1.2"
+val loaderVersion = "0.19.3"
+val fabricApiVersion = "0.153.0+26.1.2"
 
 repositories {
     mavenCentral()
     maven("https://maven.fabricmc.net/")
+    maven("https://maven.terraformersmc.com/")
 }
 
 dependencies {
     minecraft("com.mojang:minecraft:$minecraftVersion")
-    mappings("net.fabricmc:yarn:$yarnMappings:v2")
-    modImplementation("net.fabricmc:fabric-loader:$loaderVersion")
-    modImplementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+    implementation("net.fabricmc:fabric-loader:$loaderVersion")
+    implementation("net.fabricmc.fabric-api:fabric-api:$fabricApiVersion")
+    compileOnly("com.terraformersmc:modmenu:${property("modmenu_version")}")
 
     implementation("com.google.code.gson:gson:2.10.1")
 }
 
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
     withSourcesJar()
 }
@@ -46,5 +45,5 @@ tasks.processResources {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-    options.release.set(21)
+    options.release.set(25)
 }
