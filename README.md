@@ -4,6 +4,13 @@ This is the public, client-only version of Samaritan as a Fabric mod.
 
 The private server, admin panel, backend auth code, database files, and deployment scripts are intentionally not included in this repository.
 
+## Compatibility
+
+- Minecraft Java Edition 26.2 with Fabric Loader
+- OpenGL and the experimental Vulkan graphics backend
+
+The client renders through Minecraft's backend-neutral GUI render-state API and does not make raw OpenGL calls.
+
 ## Client Features
 
 - In-game login screen

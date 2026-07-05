@@ -10,9 +10,9 @@ base {
     archivesName.set("samaritan-fabric-client")
 }
 
-val minecraftVersion = "26.1.2"
+val minecraftVersion = "26.2"
 val loaderVersion = "0.19.3"
-val fabricApiVersion = "0.153.0+26.1.2"
+val fabricApiVersion = "0.154.0+26.2"
 
 repositories {
     mavenCentral()

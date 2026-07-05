@@ -41,7 +41,7 @@ public class SamaritanFabricClient implements ClientModInitializer {
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             while (openLoginScreen.consumeClick()) {
-                client.setScreen(new LoginScreen(client.screen, RUNTIME));
+                client.gui.setScreen(new LoginScreen(client.gui.screen(), RUNTIME));
             }
             RUNTIME.onClientTick(client);
         });
